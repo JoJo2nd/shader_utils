@@ -1,0 +1,53 @@
+
+float3 colourToGreyscale(float3 inColor)
+{
+    return dot(float3(0.222, 0.707, 0.071), inColor);
+}
+
+float3x3 buildHSBTransform(float hueShift, float satShift, float brightnessShift)
+{
+    const float3x3 RGB_to_YIQ =
+    {
+        float3( 0.299,     0.587,     0.114 ),
+        float3( 0.595716, -0.274453, -0.321263 ),
+        float3( 0.211456, -0.522591,  0.311135 )
+    };
+    const float3x3 YIQ_to_RGB =
+    {
+        float3( 1.0,  0.9563,  0.6210 ),
+        float3( 1.0, -0.2721, -0.6474 ),
+        float3( 1.0, -1.1070,  1.7046 )
+    };
+    float2 sinCos;
+    sincos( hueShift * 3.1415926, sinCos.x, sinCos.y );
+   
+    sinCos *= ( 1.0 + satShift );
+    float3x3 rotation;
+    rotation[ 0 ] = float3( 1.0 + brightnessShift, 0.0, 0.0 );
+    rotation[ 1 ] = float3( 0.0, sinCos.y, -sinCos.x );
+    rotation[ 2 ] = float3( 0.0, sinCos.x, sinCos.y );
+   
+    rotation[ 0 ] = mul( rotation[ 0 ], RGB_to_YIQ );
+    rotation[ 1 ] = mul( rotation[ 1 ], RGB_to_YIQ );
+    rotation[ 2 ] = mul( rotation[ 2 ], RGB_to_YIQ );
+    float3x3 result;
+    result[ 0 ] = mul( YIQ_to_RGB[ 0 ], rotation );
+    result[ 1 ] = mul( YIQ_to_RGB[ 1 ], rotation );
+    result[ 2 ] = mul( YIQ_to_RGB[ 2 ], rotation );
+   
+    return result;
+}
+
+float4 smoothCurve( float4 x ) 
+{  
+  return x * x *( 3.0 - 2.0 * x );  
+}  
+float4 triangleWave( float4 x ) 
+{  
+  return abs( frac( x + 0.5 ) * 2.0 - 1.0 );  
+}  
+
+float4 smoothTriangleWave( float4 x ) 
+{  
+  return smoothCurve( triangleWave( x ) );  
+}  
